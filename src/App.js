@@ -29,20 +29,16 @@ export default function App() {
         setImages((prevState) => [...prevState, ...images.data.hits]);
         setStatus("resolved");
         setPage((prevState) => prevState);
+        if (page !== 1) {
+          window.scrollTo({
+            top: document.documentElement.scrollHeight,
+            behavior: "smooth",
+          });
+        }
       })
+
       .catch(() => setStatus("rejected"));
   }, [page, query]);
-
-  useEffect(() => {
-    if (page !== 1) {
-      setTimeout(() => {
-        window.scrollTo({
-          top: document.documentElement.scrollHeight,
-          behavior: "smooth",
-        });
-      }, 500);
-    }
-  }, [page]);
 
   const handleFormSubmit = (query) => {
     setQuery(query);
