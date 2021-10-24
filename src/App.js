@@ -1,4 +1,4 @@
-import { Component } from "react";
+import { useState, useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "../node_modules/react-toastify/dist/ReactToastify.css";
 import ContentLoader from "./Loader/Loader";
@@ -8,93 +8,79 @@ import Searchbar from "./Searchbar/Searchbar";
 import ImageGallery from "./ImageGallery/ImageGallery";
 import Modal from "./Modal/Modal";
 
-class App extends Component {
-  state = {
-    query: "",
-    images: [],
-    error: null,
-    status: "idle",
-    page: 1,
-    showModal: false,
-    image: {},
-  };
+export default function App() {
+  const [query, setQuery] = useState("");
+  const [images, setImages] = useState([]);
+  const [status, setStatus] = useState("idle");
+  const [page, setPage] = useState(1);
+  const [showModal, setShowModal] = useState(false);
+  const [image, setImage] = useState({});
 
-  componentDidUpdate(prevProps, prevState) {
-    const { query, page } = this.state;
-    if (prevState.query !== query || prevState.page !== page) {
-      this.setState({ status: "pending" });
-
-      pictureSearchAPI(query, page)
-        .then((images) => {
-          console.log(images);
-          if (images.data.totalHits === 0) {
-            this.setState({
-              status: "rejected",
-            });
-          }
-          this.setState((prevState) => ({
-            images: [...prevState.images, ...images.data.hits],
-            status: "resolved",
-            page: prevState.page,
-          }));
-          if (this.state.images.length > 12) {
-            window.scrollTo({
-              top: document.documentElement.scrollHeight,
-              behavior: "smooth",
-            });
-          }
-        })
-        .catch((error) => this.setState({ error, status: "rejected" }));
+  useEffect(() => {
+    if (query === "") {
+      return;
     }
-  }
+    setStatus("pending");
+    pictureSearchAPI(query, page)
+      .then((images) => {
+        if (images.data.totalHits === 0) {
+          setStatus("rejected");
+        }
+        setImages((prevState) => [...prevState, ...images.data.hits]);
+        setStatus("resolved");
+        setPage((prevState) => prevState);
+      })
+      .catch(() => setStatus("rejected"));
+  }, [page, query]);
 
-  handleFormSubmit = (query) => {
-    this.setState({ query, page: 1, images: [] });
+  useEffect(() => {
+    if (page !== 1) {
+      setTimeout(() => {
+        window.scrollTo({
+          top: document.documentElement.scrollHeight,
+          behavior: "smooth",
+        });
+      }, 500);
+    }
+  }, [page]);
+
+  const handleFormSubmit = (query) => {
+    setQuery(query);
+    setPage(1);
+    setImages([]);
   };
 
-  toggleModal = () => {
-    this.setState((prevState) => ({
-      showModal: !prevState.showModal,
-    }));
+  const toggleModal = () => {
+    setShowModal((prevState) => !prevState);
   };
 
-  handleOpenPicture = (image) => {
-    this.setState({ image, showModal: true });
+  const handleOpenPicture = (image) => {
+    setImage(image);
+    setShowModal(true);
   };
 
-  onBtnClick = () => {
-    this.setState((prevState) => ({
-      page: prevState.page + 1,
-    }));
+  const onBtnClick = () => {
+    setPage((prevState) => prevState + 1);
+    setStatus("pending");
   };
 
-  render() {
-    const { images, status } = this.state;
-
-    return (
-      <div>
-        <ToastContainer autoClose={3500} />
-        <Searchbar handleFormSubmit={this.handleFormSubmit} />
-        {status === "idle" && (
-          <div className="error">Type some request word</div>
-        )}
-        {status === "rejected" && (
-          <div className="error">Can not find images for your request</div>
-        )}
-        {status === "pending" && <ContentLoader />}
-        {status === "resolved" && (
-          <ImageGallery
-            images={images}
-            onBtnClick={this.onBtnClick}
-            handleOpenPicture={this.handleOpenPicture}
-          />
-        )}
-        {this.state.showModal && (
-          <Modal onClose={this.toggleModal} image={this.state.image} />
-        )}
-      </div>
-    );
-  }
+  return (
+    <div>
+      <ToastContainer autoClose={3500} />
+      <Searchbar handleFormSubmit={handleFormSubmit} />
+      {status === "idle" && <div className="error">Type some request word</div>}
+      {status === "rejected" && (
+        <div className="error">Can not find images for your request</div>
+      )}
+      {status === "pending" && <ContentLoader />}
+      {status === "resolved" && (
+        <ImageGallery
+          images={images}
+          onBtnClick={onBtnClick}
+          handleOpenPicture={handleOpenPicture}
+        />
+      )}
+      {showModal && <Modal onClose={toggleModal} image={image} />}
+    </div>
+  );
 }
-
-export default App;

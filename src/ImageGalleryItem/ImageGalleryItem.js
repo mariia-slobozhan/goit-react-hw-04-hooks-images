@@ -21,7 +21,7 @@ export default function ImageGalleryItem({ images, handleOpenPicture }) {
 ImageGalleryItem.propTypes = {
   images: PropTypes.arrayOf(
     PropTypes.shape({
-      id: PropTypes.string,
+      id: PropTypes.number,
       webformatURL: PropTypes.string,
       tags: PropTypes.string,
     })
